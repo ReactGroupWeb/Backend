@@ -19,7 +19,7 @@ router.get(`/item-order/:userid`, async (req, res) => {
   if(!mongoose.isValidObjectId(userId)){
     return res.status(400).json({success: false});
   }
-  const orderList = await Order.find({user: userId, status: { $in :["Delivering", "Success"] } });
+  const orderList = await Order.find({user: userId, status: { $in :["Delivering", "Success"] } }).sort({"dateOrdered": -1});
   if(!orderList){
     return res.status(404).json({ success: false });
   }
@@ -43,6 +43,8 @@ router.get(`/:id`, async (req, res) => {
   if (!order) res.status(500).json({ success: false });
   res.send(order);
 });
+
+
 router.post("/", async (req, res) => {
   const orderItemsIds = Promise.all(
     req.body.orderItems.map(async (orderItem) => {
@@ -87,6 +89,8 @@ router.post("/", async (req, res) => {
 
   res.send(order);
 });
+
+
 router.put("/:id", async (req, res) => {
   const state = await Order.findById(req.params.id).select("status -_id");
   const order = await Order.findByIdAndUpdate(
@@ -101,9 +105,17 @@ router.put("/:id", async (req, res) => {
 
   res.send(order);
 });
+
+
 router.put("/success/:id", async (req, res) => {
+  const orderId = req.params.id;
+
+  if(!mongoose.isValidObjectId(orderId)){
+    return res.status(404).json({success: false, message: "Order ID is not found..."});
+  }
+
   const order = await Order.findByIdAndUpdate(
-    req.params.id,
+    orderId,
     {
       status: "Success",
       dateSuccess: Date.now(),
@@ -114,6 +126,8 @@ router.put("/success/:id", async (req, res) => {
 
   res.send(order);
 });
+
+
 router.delete("/:id", (req, res) => {
   Order.findByIdAndRemove(req.params.id)
     .then(async (order) => {
@@ -134,6 +148,8 @@ router.delete("/:id", (req, res) => {
       return res.status(500).json({ success: false, error: err });
     });
 });
+
+
 router.get("/get/totalsales", async (req, res) => {
   const totalSales = await Order.aggregate([
     { $group: { _id: null, totalsales: { $sum: "$totalPrice" } } },
@@ -145,6 +161,8 @@ router.get("/get/totalsales", async (req, res) => {
 
   res.send({ totalsales: totalSales.pop().totalsales });
 });
+
+
 router.get(`/getcount/count`, async (req, res) => {
   const orderCount = await Order.countDocuments();
 
@@ -153,6 +171,8 @@ router.get(`/getcount/count`, async (req, res) => {
     orderCount: orderCount,
   });
 });
+
+
 router.get(`/get/userorders/:userid`, async (req, res) => {
   const userOrderList = await Order.find({ user: req.params.userid })
     .populate({
@@ -169,6 +189,8 @@ router.get(`/get/userorders/:userid`, async (req, res) => {
   }
   res.send(userOrderList);
 });
+
+
 //sort the status
 router.get(`/get/:type`, async (req, res) => {
   const orders = await Order.find({ status: req.params.type })
@@ -177,5 +199,42 @@ router.get(`/get/:type`, async (req, res) => {
   if (!orders) res.status(500).json({ success: false });
   res.send(orders);
 });
+
+
+// count total purchased
+router.get(`/total-purchased/:userid`, async (req, res) => {
+  const userId = req.params.userid;
+
+  if(!mongoose.isValidObjectId(userId)){
+    return res.status(400).json({success: false});
+  }
+
+  const totalPurchased = await Order.find({user: userId, status: { $in :["Ordered","Delivering", "Success"] } }).countDocuments();
+
+  if(!totalPurchased){
+    return res.sendStatus(400);
+  }
+  res.status(200).send({totalPurchased : totalPurchased});
+});
+
+// count total delivery
+router.get(`/total-delivery/:userid`, async (req, res) => {
+  const userId = req.params.userid;
+
+  if(!mongoose.isValidObjectId(userId)){
+    return res.status(400).json({success: false});
+  }
+
+  const totalDelivery = await Order.find({user: userId, status: { $in :["Delivering", "Success"] } }).countDocuments();
+  
+  if(!totalDelivery){
+    return res.sendStatus(400);
+  }
+
+  res.status(200).send({totalDelivery: totalDelivery});
+});
+
+
+
 
 module.exports = router;
