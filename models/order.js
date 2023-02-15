@@ -13,6 +13,22 @@ const orderSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
+  firstname : { 
+      type: String, 
+      require: true 
+  },
+  lastname: { 
+      type: String, 
+      require: true 
+  },
+  phone: { 
+      type: Number, 
+      require: true 
+  },
+  email: { 
+      type: String, 
+       require: true
+  },
   shippingAddress: {
     type: String,
     required: true,
@@ -29,8 +45,17 @@ const orderSchema = mongoose.Schema({
     type: String,
     default: "Ordered",
   },
-  totalPrice: {
-    type: Number,
+  tax: { 
+    type: Number, 
+    default: 10
+  },
+  subTotal: { 
+    type: Number, 
+    default: 0 
+  },
+  totalPrice: { 
+    type: Number, 
+    default: 0 
   },
   dateOrdered: {
     type: Date,

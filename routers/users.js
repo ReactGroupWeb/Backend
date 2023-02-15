@@ -151,7 +151,7 @@ router.post("/login", async (req, res) => {
     res.status(200).send({ user: user, token: token });
     // res.status(200).send("Login Success");
   } else {
-    res.status(400).send("password is wrong!");
+    res.status(400).send("Password is wrong!");
   }
 });
 //set sign-up
@@ -194,9 +194,7 @@ router.delete("/:id", async (req, res) => {
 router.get(`/get/count`, async (req, res) => {
   const userCount = await User.countDocuments();
 
-  if (!userCount) {
-    res.status(500).json({ success: false });
-  }
+  if (!userCount) res.status(500).json({ success: false });
   res.send({
     userCount: userCount,
   });

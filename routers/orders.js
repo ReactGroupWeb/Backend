@@ -1,6 +1,7 @@
 const { Order } = require("../models/order");
 const express = require("express");
 const { OrderItem } = require("../models/order-item");
+const mongoose = require("mongoose");
 const router = express.Router();
 
 router.get(`/`, async (req, res) => {
@@ -11,6 +12,23 @@ router.get(`/`, async (req, res) => {
   res.send(orderList);
 });
 
+// get order item by each user
+router.get(`/item-order/:userid`, async (req, res) => {
+  const userId = req.params.userid;
+
+  if(!mongoose.isValidObjectId(userId)){
+    return res.status(400).json({success: false});
+  }
+  const orderList = await Order.find({user: userId, status: { $in :["Delivering", "Success"] } });
+  if(!orderList){
+    return res.status(404).json({ success: false });
+  }
+
+  return res.send(orderList);
+});
+
+
+// get all user ordered
 router.get(`/:id`, async (req, res) => {
   const order = await Order.findById(req.params.id)
     .populate("user")
@@ -25,7 +43,6 @@ router.get(`/:id`, async (req, res) => {
   if (!order) res.status(500).json({ success: false });
   res.send(order);
 });
-
 router.post("/", async (req, res) => {
   const orderItemsIds = Promise.all(
     req.body.orderItems.map(async (orderItem) => {
@@ -38,25 +55,31 @@ router.post("/", async (req, res) => {
     })
   );
   const orderItemsIdsResolved = await orderItemsIds;
-  const totalPrices = await Promise.all(
-    orderItemsIdsResolved.map(async (orderItemId) => {
-      const orderItem = await OrderItem.findById(orderItemId).populate(
-        "product",
-        "salePrice"
-      );
-      const totalPrice = orderItem.product.salePrice * orderItem.quantity;
-      return totalPrice;
-    })
-  );
-  const totalPrice = totalPrices.reduce((a, b) => a + b, 0);
+  // const totalPrices = await Promise.all(
+  //   orderItemsIdsResolved.map(async (orderItemId) => {
+  //     const orderItem = await OrderItem.findById(orderItemId).populate(
+  //       "product",
+  //       "salePrice"
+  //     );
+  //     const totalPrice = orderItem.product.salePrice * orderItem.quantity;
+  //     return totalPrice;
+  //   })
+  // );
+  // const totalPrice = totalPrices.reduce((a, b) => a + b, 0);
   let order = new Order({
     orderItems: orderItemsIdsResolved,
     user: req.body.user,
+    firstname: req.body.firstname,
+    lastname: req.body.lastname,
+    phone: req.body.phone,
+    email: req.body.email,
     shippingAddress: req.body.shippingAddress,
     city: req.body.city,
     country: req.body.country,
+    tax: req.body.tax,
+    subTotal: req.body.subTotal,
     status: req.body.status,
-    totalPrice: totalPrice,
+    totalPrice: req.body.totalPrice
   });
   order = await order.save();
 
@@ -64,7 +87,6 @@ router.post("/", async (req, res) => {
 
   res.send(order);
 });
-
 router.put("/:id", async (req, res) => {
   const state = await Order.findById(req.params.id).select("status -_id");
   const order = await Order.findByIdAndUpdate(
@@ -79,7 +101,19 @@ router.put("/:id", async (req, res) => {
 
   res.send(order);
 });
+router.put("/success/:id", async (req, res) => {
+  const order = await Order.findByIdAndUpdate(
+    req.params.id,
+    {
+      status: "Success",
+      dateSuccess: Date.now(),
+    },
+    { new: true }
+  );
+  if (!order) return res.status(400).send("the order cannot be update!");
 
+  res.send(order);
+});
 router.delete("/:id", (req, res) => {
   Order.findByIdAndRemove(req.params.id)
     .then(async (order) => {
@@ -100,7 +134,6 @@ router.delete("/:id", (req, res) => {
       return res.status(500).json({ success: false, error: err });
     });
 });
-
 router.get("/get/totalsales", async (req, res) => {
   const totalSales = await Order.aggregate([
     { $group: { _id: null, totalsales: { $sum: "$totalPrice" } } },
@@ -112,8 +145,7 @@ router.get("/get/totalsales", async (req, res) => {
 
   res.send({ totalsales: totalSales.pop().totalsales });
 });
-
-router.get(`/get/count`, async (req, res) => {
+router.get(`/getcount/count`, async (req, res) => {
   const orderCount = await Order.countDocuments();
 
   if (!orderCount) res.status(500).json({ success: false });
@@ -121,7 +153,6 @@ router.get(`/get/count`, async (req, res) => {
     orderCount: orderCount,
   });
 });
-
 router.get(`/get/userorders/:userid`, async (req, res) => {
   const userOrderList = await Order.find({ user: req.params.userid })
     .populate({
@@ -138,28 +169,13 @@ router.get(`/get/userorders/:userid`, async (req, res) => {
   }
   res.send(userOrderList);
 });
-//show the status=Ordered
-router.get(`/get/Ordered`, async (req, res) => {
-  const orders = await Order.find({ status: "Ordered" })
+//sort the status
+router.get(`/get/:type`, async (req, res) => {
+  const orders = await Order.find({ status: req.params.type })
     .populate("user")
     .sort({ dateOrdered: -1 });
   if (!orders) res.status(500).json({ success: false });
   res.send(orders);
 });
-//show the status=Delivering
-router.get(`/get/Delivering`, async (req, res) => {
-  const orders = await Order.find({ status: "Delivering" })
-    .populate("user")
-    .sort({ dateOrdered: -1 });
-  if (!orders) res.status(500).json({ success: false });
-  res.send(orders);
-});
-//show the status=Success
-router.get(`/get/Success`, async (req, res) => {
-  const orders = await Order.find({ status: "Success" })
-    .populate("user")
-    .sort({ dateOrdered: -1 });
-  if (!orders) res.status(500).json({ success: false });
-  res.send(orders);
-});
+
 module.exports = router;

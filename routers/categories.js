@@ -33,7 +33,6 @@ router.get(`/get/product_category`, async (req, res) => {
   res.send(categories);
 });
 
-
 router.post(`/`, Upload.single("icon"), async (req, res) => {
   const file = req.file;
   const basePath = `${req.protocol}://${req.get("host")}/public/upload/`;

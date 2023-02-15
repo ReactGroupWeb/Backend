@@ -7,14 +7,12 @@ const { DeleteImage } = require("../helpers/DeleteUpload");
 const { Company } = require("../models/company");
 //router
 const router = express.Router();
-
 //get company data
 router.get(`/`, async (req, res) => {
   const company = await Company.find();
   if (!company) res.status(500).json({ success: false });
   res.send(company);
 });
-
 //search company by id
 router.get(`/:id`, async (req, res) => {
   const company = await Company.findById(req.params.id);
@@ -47,7 +45,6 @@ router.post(`/`, Upload.single("logo"), async (req, res) => {
   }
   res.send(company);
 });
-
 //update company by id
 router.put("/:id", Upload.single("logo"), async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) {

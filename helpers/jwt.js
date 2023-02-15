@@ -10,16 +10,17 @@ function authJwt() {
   }).unless({
     path: [
       { url: /\/public\/upload(.*)/, methods: ["GET", "OPTIONS"] },
-      { url: /\/api\/v1\/products(.*)/, methods: ["GET", "OPTIONS"] },
+      { url: /\/api\/v1\/products(.*)/, methods: ["GET", "PUT", "OPTIONS"] },
       { url: /\/api\/v1\/sliders(.*)/, methods: ["GET", "OPTIONS"] },
       { url: /\/api\/v1\/categories(.*)/, methods: ["GET", "OPTIONS"] },
       { url: /\/api\/v1\/users(.*)/, methods: ["GET", "OPTIONS"] },
       { url: /\/api\/v1\/orders(.*)/, methods: ["GET", "OPTIONS", "POST"] },
       { url: /\/api\/v1\/companys(.*)/, methods: ["GET", "OPTIONS", "POST"] },
-      { url: /\/api\/v1\/shoppingcarts(.*)/, methods: ["GET", "POST", "DELETE", "OPTIONS"] },
+      { url: /\/api\/v1\/shoppingcarts(.*)/, methods: ["GET", "POST", "PUT" ,"DELETE", "OPTIONS"] },
       { url: /\/api\/v1\/users\/active(.*)/, methods: ["PUT", "OPTIONS"] },
       { url: /\/api\/v1\/users\/chfgPass(.*)/, methods: ["PUT", "OPTIONS"] },
-
+      { url: /\/api\/v1\/orders\/success(.*)/, methods: ["PUT", "OPTIONS"] },
+      
       `${api}/users/login`,
       `${api}/users/fgPassword`,
       `${api}/users/register`,

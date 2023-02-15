@@ -8,23 +8,36 @@ const { Upload } = require("../helpers/SaveUpload");
 const { DeleteImage } = require("../helpers/DeleteUpload");
 //router
 const router = express.Router();
-
 //get products data
 router.get(`/`, async (req, res) => {
   // const productList = await Product.find().select('name image -_id price countInStock dateCreated').populate('category');
   let filter = {};
-  if (req.query.categories) {
+  if (req.query.categories)
     filter = { category: req.query.categories.split(",") };
-  }
-
-  const productList = await Product.find(filter).populate("category");
-
-  if (!productList) {
-    res.status(500).json({ success: false });
-  }
+  const productList = await Product.find(filter)
+    .populate("category")
+    .sort({ dateCreated: -1 });
+  if (!productList) res.status(500).json({ success: false });
   res.send(productList);
 });
+//get short by products data
+router.get(`/get/:sort/:FC/:direction`, async (req, res) => {
+  //get all category
+  let filter = {};
+  if (req.query.categories)
+    filter = { category: req.query.categories.split(",") };
+  //get all products and sort asc and select type of category
+  const productList = await Product.find(
+    //select only category type if params.FC != All
+    req.params.FC == "All" ? filter : { category: req.params.FC }
+  )
+    .populate("category")
+    .sort({ [req.params.sort]: req.params.direction });
 
+  if (!productList) res.status(500).json({ success: false });
+
+  res.send(productList);
+});
 //search product by id
 router.get(`/:id`, async (req, res) => {
   const product = await Product.findById(req.params.id).populate("category");
@@ -33,18 +46,14 @@ router.get(`/:id`, async (req, res) => {
   }
   res.send(product);
 });
-
 //import product into specific category id
 router.post(`/`, Upload.single("image"), async (req, res) => {
   const category = await Category.findById(req.body.category);
   if (!category) return res.status(400).send("Invalid Category");
-
   const file = req.file;
   if (!file) return res.status(400).send("Image Required");
-
   const fileName = file.filename;
   const basePath = `${req.protocol}://${req.get("host")}/public/upload/`;
-
   let product = new Product({
     name: req.body.name,
     description: req.body.description,
@@ -57,15 +66,12 @@ router.post(`/`, Upload.single("image"), async (req, res) => {
     rating: req.body.rating,
     isFeatured: req.body.isFeatured,
   });
-
   product = await product.save();
-  
   if (!product) {
     return res.status(500).send("the product cannot be created!");
   }
   res.send(product);
 });
-
 //update product by id
 router.put("/:id", Upload.single("image"), async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) {
@@ -100,7 +106,6 @@ router.put("/:id", Upload.single("image"), async (req, res) => {
 
   res.send(product);
 });
-
 //delete product by id
 router.delete("/:id", async (req, res) => {
   // delete old image
@@ -126,30 +131,23 @@ router.delete("/:id", async (req, res) => {
       return res.status(500).json({ success: false, error: err });
     });
 });
-
 //count all products
-router.get(`/get/count`, async (req, res) => {
+router.get(`/getcount/count`, async (req, res) => {
   const productCount = await Product.countDocuments();
 
-  if (!productCount) {
-    res.status(500).json({ success: false });
-  }
+  if (!productCount) res.status(500).json({ success: false });
   res.send({
     productCount: productCount,
   });
 });
-
 //count featured if it true
 router.get(`/get/featured/:count`, async (req, res) => {
   const count = req.params.count ? req.params.count : 0;
   const products = await Product.find({ isFeatured: true }).limit(+count);
 
-  if (!products) {
-    res.status(500).json({ success: false });
-  }
+  if (!products) res.status(500).json({ success: false });
   res.send(products);
 });
-
 router.put(
   "/gallery-images/:id",
   Upload.array("images", 5),
@@ -223,6 +221,20 @@ router.get(`/get/new_arrival_product`, async (req, res) => {
   }
   res.status(200).send(new_arrival_product);
 })
+
+
+// get related product by cartegory in product detail page
+router.get('/get/related-product', async (req, res) => {
+  const category = mongoose.Types.ObjectId(req.params.category);
+
+  // check the category
+  if(!category){
+    return res.status(400).send("Category is required");
+  }
+
+  const filterProducts = await Product.find({category: category});
+  res.status(200).send(filterProducts);
+});
 
 
 // count all the product by category (Name and Number counted)
@@ -311,5 +323,23 @@ router.get(`/get/product_category/:id`, async (req, res) => {
 
   res.send(productCategory)
 });
+
+router.put(`/update_count_in_stock/:productid`, async (req, res) => {
+  const productId = req.params.productid;
+  const body = req.body;
+
+  const subStractStock = await Product.findByIdAndUpdate(productId,
+    {
+      countInStock: body.countInStock,
+    },
+    {new: true}
+  )
+
+  if(!subStractStock){
+    res.status(401).send("Failed to SubStract the Product Stock");
+  }
+
+  res.send(subStractStock);
+})
 
 module.exports = router;
