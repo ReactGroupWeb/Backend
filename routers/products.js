@@ -140,6 +140,7 @@ router.get(`/getcount/count`, async (req, res) => {
     productCount: productCount,
   });
 });
+
 //count featured if it true
 router.get(`/get/featured/:count`, async (req, res) => {
   const count = req.params.count ? req.params.count : 0;
@@ -223,20 +224,6 @@ router.get(`/get/new_arrival_product`, async (req, res) => {
 })
 
 
-// get related product by cartegory in product detail page
-router.get('/get/related-product', async (req, res) => {
-  const category = mongoose.Types.ObjectId(req.params.category);
-
-  // check the category
-  if(!category){
-    return res.status(400).send("Category is required");
-  }
-
-  const filterProducts = await Product.find({category: category});
-  res.status(200).send(filterProducts);
-});
-
-
 // count all the product by category (Name and Number counted)
 router.get("/get/product_category", async (req, res) => {
   const productByCategory = await Product.aggregate([
@@ -274,7 +261,7 @@ router.get("/get/product_category", async (req, res) => {
   res.send(productByCategory);
 });
 
-// get a single product by the category
+// get product by the category amd related product
 router.get(`/get/product_category/:id`, async (req, res) => {
   const categoryID = req.params.id;
 
@@ -311,6 +298,7 @@ router.get(`/get/product_category/:id`, async (req, res) => {
         sku: "$product.sku",
         rating: "$product.rating",
         isFeatured: "$product.isFeatured",
+        countInStock: "$product.countInStock",
         count: 1,
         products: 1
       }
@@ -324,6 +312,7 @@ router.get(`/get/product_category/:id`, async (req, res) => {
   res.send(productCategory)
 });
 
+// update product count in stock after clicked add to cart
 router.put(`/update_count_in_stock/:productid`, async (req, res) => {
   const productId = req.params.productid;
   const body = req.body;

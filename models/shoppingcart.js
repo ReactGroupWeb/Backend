@@ -18,17 +18,7 @@ const shoppingcartSchema = mongoose.Schema({
         type: Number
     }
 });
-/* 
-    content : [
-        {
-            name: product.name,
-            quantity: product.qty,
-            subtotal: product.subtotal,
-            totalprice: product.totalPrice,
-            img: product.imamge
-        }
-    ]
-*/
+
 shoppingcartSchema.virtual("id").get(function () {
     return this._id.toHexString();
 });

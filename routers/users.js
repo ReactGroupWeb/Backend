@@ -5,6 +5,8 @@ const bcrypt = require("bcryptjs");
 const { Upload } = require("../helpers/SaveUpload");
 const { DeleteImage } = require("../helpers/DeleteUpload");
 const jwt = require("jsonwebtoken");
+
+
 //get all users data
 router.get(`/`, async (req, res) => {
   const userList = await User.find().select("-passwordHash");
@@ -14,6 +16,8 @@ router.get(`/`, async (req, res) => {
   }
   res.send(userList);
 });
+
+
 //get user by id
 router.get("/:id", async (req, res) => {
   const user = await User.findById(req.params.id).select("-passwordHash");
@@ -25,6 +29,8 @@ router.get("/:id", async (req, res) => {
   }
   res.status(200).send(user);
 });
+
+
 //import user info
 router.post("/", Upload.single("image"), async (req, res) => {
   const file = req.file;
@@ -66,6 +72,8 @@ router.post("/", Upload.single("image"), async (req, res) => {
     res.send(user);
   }
 });
+
+
 //update user by id
 router.put("/:id", Upload.single("image"), async (req, res) => {
   // const userExist = await User.findById(req.params.id);
@@ -104,6 +112,8 @@ router.put("/:id", Upload.single("image"), async (req, res) => {
 
   res.send(user);
 });
+
+
 //update active by id
 router.put("/active/:id", async (req, res) => {
   const user = await User.findByIdAndUpdate(
@@ -115,6 +125,8 @@ router.put("/active/:id", async (req, res) => {
   );
   res.send(user);
 });
+
+
 //change password by id
 router.put("/chPass/:id/:oldPass", async (req, res) => {
   const userExist = await User.findById(req.params.id);
@@ -133,6 +145,8 @@ router.put("/chPass/:id/:oldPass", async (req, res) => {
     res.send(user);
   } else res.status(400).send("Old Password is wrong!");
 });
+
+
 //set login
 router.post("/login", async (req, res) => {
   const user = await User.findOne({ email: req.body.email });
@@ -154,6 +168,8 @@ router.post("/login", async (req, res) => {
     res.status(400).send("Password is wrong!");
   }
 });
+
+
 //set sign-up
 router.post("/register", async (req, res) => {
   let user = new User({
@@ -167,6 +183,8 @@ router.post("/register", async (req, res) => {
 
   res.send(user);
 });
+
+
 // delete user by id
 router.delete("/:id", async (req, res) => {
   const image = await User.findById(req.params.id, {
@@ -190,6 +208,8 @@ router.delete("/:id", async (req, res) => {
       return res.status(500).json({ success: false, error: err });
     });
 });
+
+
 //count all users
 router.get(`/get/count`, async (req, res) => {
   const userCount = await User.countDocuments();
@@ -199,6 +219,9 @@ router.get(`/get/count`, async (req, res) => {
     userCount: userCount,
   });
 });
+
+
+// forgot password
 router.post("/fgPassword", async (req, res) => {
   const user = await User.findOne({ email: req.body.email });
   if (!user) return res.status(400).send("This Email not found");
@@ -213,6 +236,8 @@ router.post("/fgPassword", async (req, res) => {
     });
   }
 });
+
+
 //change forgot password by id
 router.put("/chfgPass/:id", async (req, res) => {
   const userExist = await User.findById(req.params.id);
@@ -229,4 +254,15 @@ router.put("/chfgPass/:id", async (req, res) => {
   if (!user) return res.status(400).send("the password cannot be change!");
   res.send(user);
 });
+
+
+// get user status isAdmin: true
+router.get("/get/user-admin", async (req, res) => {
+  const userAdmin = await User.find({isAdmin: true});
+
+  if(!userAdmin) return res.sendStatus(401);
+
+  res.send(userAdmin);
+});
+
 module.exports = router;
