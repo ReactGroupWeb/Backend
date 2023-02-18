@@ -96,6 +96,33 @@ router.put(`/update-cart/:cartid`, async (req, res) => {
 });
 
 
+// move wishlist item to cart item 
+router.put(`/move-to-cart/:wishlistid`, async (req, res) => {
+
+    const body = req.body;
+    const wishlistID = req.params.wishlistid;
+
+    if(!mongoose.isValidObjectId(wishlistID)){
+        return res.status(500).send("ID is not valid");
+    }
+
+    const wishlistItem = await ShoppingCart.findByIdAndUpdate(
+        wishlistID,
+        {
+            instance: body.instance,
+            quantity: body.quantity
+        },
+        { new: true }
+    );
+
+    if(!wishlistItem){
+        return res.status(401).json({success: false, message: "Update is not avialabel"});
+    }
+
+    res.status(200).send(wishlistItem);
+});
+
+
 
 // count all the cart item number
 router.get(`/get/cart_item_count`, async (req, res) => {
@@ -133,6 +160,7 @@ router.get(`/get/wishlist_item_count/:userId`, async (req, res) => {
     return res.status(200).send({countWishlistItem: countWishlistItem});
 });
 
+
 // remove a single cart tiem
 router.delete(`/remove/cart_item/:cartid`, async (req, res) => {
 
@@ -150,6 +178,7 @@ router.delete(`/remove/cart_item/:cartid`, async (req, res) => {
 
     res.status(200).json({success: true, messaage: "Delete Successfully"});
 });
+
 
 // clear all the cart item by each user
 router.delete(`/clear/cart_items/:userid`, (req, res) => {
@@ -170,6 +199,23 @@ router.delete(`/clear/cart_items/:userid`, (req, res) => {
     .catch(err => {
         return res.status(500).json({success: false, messaage: err});
     })
+});
+
+
+// remove wishlist item 
+router.delete(`/remove/wishlist-item/:wishlistid`, async (req, res) => {
+    const wishlistId = req.params.wishlistid;
+
+    if(!mongoose.isValidObjectId(wishlistId)){
+        return res.status(500).send("The id is invalid");
+    }
+
+    const removeWishlistItem = await ShoppingCart.findByIdAndRemove(wishlistId);
+    if(!removeWishlistItem){
+        return res.status(400).json({success: false});
+    }
+
+    res.status(200).json({success: true, messaage: "Delete Successfully"});
 });
 
 
